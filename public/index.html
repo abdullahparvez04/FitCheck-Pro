@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FitCheck Pro — Neural Fashion Intelligence</title>
+  
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500;1,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Ambient atmosphere: mesh gradient, drifting glows, dust motes -->
+  <div class="bg-mesh"></div>
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+  <div class="motes" id="dustMotes"></div>
+
+  <main class="app-shell">
+    <!-- Header Component -->
+    <header class="app-header">
+      <div class="pill-badge">
+        <span class="pulse-dot"></span> Reviewed by Gemini
+      </div>
+      <h1>FitCheck<span class="brand-sub">.</span></h1>
+      <p class="subtitle">Upload the fit. Name the occasion. Get an honest read on cut, color, and confidence.</p>
+    </header>
+
+    <!-- Main Interactive Card -->
+    <section class="glass-surface main-card">
+      <div class="spotlight"></div>
+      <form id="outfitForm">
+        
+        <!-- Dropzone / Image Uploader -->
+        <div class="upload-dropzone" id="dropZone">
+          <input type="file" id="imageInput" name="image" accept="image/*" hidden required>
+          <div class="upload-content" id="uploadPrompt">
+            <div class="icon-bubble">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+            </div>
+            <span class="upload-title">Drop your fit check image here</span>
+            <span class="upload-hint">Supports high-res HEIC, PNG, or JPG</span>
+          </div>
+
+          <div class="preview-wrapper hidden" id="previewContainer">
+            <img id="imagePreview" src="" alt="Uploaded outfit preview">
+            <button type="button" class="action-icon-btn" id="removeImgBtn" title="Remove image">&times;</button>
+          </div>
+        </div>
+
+        <!-- Configuration Stack -->
+        <div class="config-stack">
+          <div class="field-group">
+            <label for="occasion">Target Occasion</label>
+            <input type="text" id="occasion" name="occasion" placeholder="e.g. Paris Fashion Week, Rooftop Dinner, Boardroom" required>
+          </div>
+
+          <div class="field-group">
+            <label for="persona">Stylist Intelligence Persona</label>
+            <div class="select-wrapper">
+              <select id="persona" name="persona">
+                <option value="friend" selected>Warm & Supportive Friend 🤝</option>
+                <option value="roast">Brutally Honest Critic 🔥</option>
+                <option value="executive">Polished Luxury Executive 👔</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit Action -->
+        <button type="submit" class="apple-button" id="submitBtn">
+          <span>Run Neural Analysis</span>
+          <svg class="btn-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </form>
+    </section>
+
+    <!-- Dynamic Loading Screen -->
+    <div class="loading-state glass-surface hidden" id="loadingState">
+      <div class="apple-spinner"></div>
+      <p class="loading-status">Evaluating textures, cuts, and chromatic harmony...</p>
+    </div>
+
+    <!-- Results Display Card -->
+    <section class="glass-surface results-card hidden" id="resultsSection">
+      <div class="spotlight"></div>
+      <div class="results-top-row">
+        <div class="score-container">
+          <span class="score-glow" aria-hidden="true"></span>
+          <span class="score-number" id="scoreVal">--</span>
+          <span class="score-denominator">/10</span>
+        </div>
+        <div class="vibe-container">
+          <span class="pill-tag" id="vibeTag">VIBE ARCHETYPE</span>
+          <p class="summary-statement" id="summaryText"></p>
+        </div>
+      </div>
+
+      <div class="insights-dual-grid">
+        <div class="insight-box pros">
+          <h4>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            Strengths
+          </h4>
+          <ul id="prosList"></ul>
+        </div>
+
+        <div class="insight-box cons">
+          <h4>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Weaknesses
+          </h4>
+          <ul id="consList"></ul>
+        </div>
+      </div>
+
+      <div class="tips-container">
+        <h4>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Master Stylist Recommendations
+        </h4>
+        <ul id="tipsList"></ul>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+  <script src="ui-effects.js"></script>
+</body>
+</html>
