@@ -50,7 +50,7 @@ async function getActiveModel(apiKey) {
 // Map frontend choices to detailed system prompts
 // Map frontend choices to detailed system prompts
 function getSystemPrompt(personaChoice) {
-    const strictRule = " CRITICAL: Do NOT ask the user for the occasion or event. Evaluate the outfit directly and assume a versatile everyday style.";
+    const strictRule = " ABSOLUTE RULE: DO NOT ask what the occasion, event, or destination is. NEVER ask 'Where are you wearing this?'. Assume a versatile everyday outfit and give immediate ratings and style feedback based strictly on what you see in the photo.";
 
     switch (personaChoice) {
         case 'roast':
