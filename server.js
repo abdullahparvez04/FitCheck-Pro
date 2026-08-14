@@ -48,7 +48,6 @@ async function getActiveModel(apiKey) {
 }
 
 // Map frontend choices to detailed system prompts
-// Map frontend choices to detailed system prompts
 function getSystemPrompt(personaChoice) {
     const strictRule = " ABSOLUTE RULE: DO NOT ask what the occasion, event, or destination is. NEVER ask 'Where are you wearing this?'. Assume a versatile everyday outfit and give immediate ratings and style feedback based strictly on what you see in the photo.";
 
@@ -76,63 +75,48 @@ app.post('/api/rate-outfit', upload.single('image'), async (req, res) => {
       return res.status(500).json({ error: 'GEMINI_API_KEY is missing in .env file.' });
     }
 
-    const occasion = req.body.occasion || 'Casual Everyday';
-    const personaChoice = req.body.persona || 'friend';
-    
-    const imageBase64 = req.file.buffer.toString('base64');
+    const personaChoice = req.body.persona || 'executive';
+    const systemPrompt = getSystemPrompt(personaChoice);
+    const selectedModel = await getActiveModel(apiKey);
+
+    const base64Image = req.file.buffer.toString('base64');
     const mimeType = req.file.mimetype;
 
-    const modelName = await getActiveModel(apiKey);
-    console.log(`Using model: ${modelName} | Persona: ${personaChoice}`);
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
 
-    const promptText = `
-    Evaluate the outfit in this photo for the occasion: "${occasion}".
-    
-    Provide your evaluation structured in JSON with keys:
-    - score (number out of 10)
-    - vibe (short phrase)
-    - summary (1-2 sentences matching your persona)
-    - pros (array of strings)
-    - cons (array of strings)
-    - tips (array of strings)
-    `;
-
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+    const requestBody = {
+      systemInstruction: {
+        parts: [{ text: systemPrompt }]
+      },
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { 
+              text: "Analyze this outfit immediately. Give complete feedback on fit, color harmony, and styling tips. DO NOT ask any follow-up questions. DO NOT ask for the occasion or event." 
+            },
+            {
+              inlineData: {
+                mimeType: mimeType,
+                data: base64Image
+              }
+            }
+          ]
+        }
+      ]
+    };
 
     const apiResponse = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        // system_instruction forces Gemini to adopt the selected persona
-        system_instruction: {
-          parts: [{ text: getSystemPrompt(personaChoice) }]
-        },
-        contents: [
-          {
-            parts: [
-              { text: promptText },
-              {
-                inline_data: {
-                  mime_type: mimeType,
-                  data: imageBase64
-                }
-              }
-            ]
-          }
-        ],
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
-      })
+      body: JSON.stringify(requestBody)
     });
 
     const data = await apiResponse.json();
 
     if (!apiResponse.ok) {
       console.error('Gemini API Error:', data);
-      return res.status(apiResponse.status).json({ 
-        error: data.error?.message || 'Gemini API request failed.' 
-      });
+      return res.status(500).json({ error: data.error?.message || 'Gemini API call failed.' });
     }
 
     const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -140,8 +124,7 @@ app.post('/api/rate-outfit', upload.single('image'), async (req, res) => {
       throw new Error('Empty response received from Gemini API.');
     }
 
-    const parsedData = JSON.parse(responseText);
-    res.json(parsedData);
+    res.json({ result: responseText });
 
   } catch (err) {
     console.error('--- SERVER ERROR ---', err);
