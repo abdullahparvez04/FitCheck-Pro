@@ -47,23 +47,6 @@ async function getActiveModel(apiKey) {
   return cachedModelName;
 }
 
-// Map frontend choices to detailed system prompts
-function getSystemPrompt(personaChoice) {
-    const strictRule = " ABSOLUTE RULE: DO NOT ask what the occasion, event, or destination is. NEVER ask 'Where are you wearing this?'. Assume a versatile everyday outfit and give immediate ratings and style feedback based strictly on what you see in the photo.";
-
-    switch (personaChoice) {
-        case 'roast':
-            return `You are a hilarious, no-nonsense high-fashion critic.${strictRule} Be witty, cheeky, and playfully roast bad fashion choices, but keep recommendations helpful.`;
-
-        case 'executive':
-            return `You are a top-tier luxury fashion executive.${strictRule} Keep your tone formal, direct, minimalist, and authoritative. Focus strictly on proportion, fit, and color.`;
-
-        case 'friend':
-        default:
-            return `You are a warm, supportive, and enthusiastic best friend giving outfit feedback.${strictRule} Use casual, human-like, encouraging language. Make the user feel great while giving helpful advice.`;
-    }
-}
-
 app.post('/api/rate-outfit', upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
@@ -75,14 +58,39 @@ app.post('/api/rate-outfit', upload.single('image'), async (req, res) => {
       return res.status(500).json({ error: 'GEMINI_API_KEY is missing in .env file.' });
     }
 
-    const personaChoice = req.body.persona || 'executive';
-    const systemPrompt = getSystemPrompt(personaChoice);
     const selectedModel = await getActiveModel(apiKey);
 
     const base64Image = req.file.buffer.toString('base64');
     const mimeType = req.file.mimetype;
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
+
+    const systemPrompt = "You are an objective, hilarious fashion critic operating the FitCheck-Pro Aura Points system.";
+
+    const auraPrompt = `
+    TASK:
+    Analyze the clothing items visible in the photo strictly on fit, color harmony, silhouette, and style execution.
+    
+    CONTEXT ASSUMPTION:
+    Assume the outfit is for everyday casual wear. Do not analyze suitability for specific events.
+
+    OUTPUT INSTRUCTIONS:
+    - Return ONLY valid JSON with no markdown formatting.
+    - Focus exclusively on: fabric choice, fit/tailoring, color coordination, accessories, and grooming.
+    - NEVER include questions in your response. Output direct statements only.
+
+    JSON FORMAT EXACT STRUCTURE:
+    {
+      "totalAura": "+4,200",
+      "verdict": "Unspoken Rizz",
+      "auraBreakdown": [
+        "+2,500 Aura: Monochromatic color palette execution",
+        "+2,000 Aura: Perfectly proportioned jacket length",
+        "-300 Aura: Scuffed footwear needs attention"
+      ],
+      "feedback": "Immaculate color balance and silhouette. A quick shoe refresh takes this straight to peak Aura."
+    }
+    `;
 
     const requestBody = {
       systemInstruction: {
@@ -92,9 +100,7 @@ app.post('/api/rate-outfit', upload.single('image'), async (req, res) => {
         {
           role: "user",
           parts: [
-            { 
-              text: "Analyze this outfit immediately. Give complete feedback on fit, color harmony, and styling tips. DO NOT ask any follow-up questions. DO NOT ask for the occasion or event." 
-            },
+            { text: auraPrompt },
             {
               inlineData: {
                 mimeType: mimeType,
@@ -119,16 +125,20 @@ app.post('/api/rate-outfit', upload.single('image'), async (req, res) => {
       return res.status(500).json({ error: data.error?.message || 'Gemini API call failed.' });
     }
 
-    const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    let responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!responseText) {
       throw new Error('Empty response received from Gemini API.');
     }
 
-    res.json({ result: responseText });
+    // Clean up markdown formatting if returned
+    responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+
+    const parsedData = JSON.parse(responseText);
+    res.json(parsedData);
 
   } catch (err) {
     console.error('--- SERVER ERROR ---', err);
-    res.status(500).json({ error: 'Failed to analyze outfit.' });
+    res.status(500).json({ error: 'Failed to calculate Aura Points.' });
   }
 });
 
