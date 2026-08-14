@@ -48,21 +48,21 @@ async function getActiveModel(apiKey) {
 }
 
 // Map frontend choices to detailed system prompts
+// Map frontend choices to detailed system prompts
 function getSystemPrompt(personaChoice) {
-  switch (personaChoice) {
-    case 'roast':
-      return `You are a hilarious, no-nonsense high-fashion critic. 
-      Be witty, cheeky, and playfully roast bad fashion choices, but keep recommendations sharp and helpful.`;
-    
-    case 'executive':
-      return `You are a top-tier luxury fashion executive. 
-      Keep your tone formal, direct, minimalist, and authoritative. Focus strictly on proportions, fabrics, and formality levels.`;
-    
-    case 'friend':
-    default:
-      return `You are a warm, supportive, and enthusiastic best friend giving outfit feedback. 
-      Use casual, human-like, encouraging language. Make the user feel great while giving helpful tips.`;
-  }
+    const strictRule = " CRITICAL: Do NOT ask the user for the occasion or event. Evaluate the outfit directly and assume a versatile everyday style.";
+
+    switch (personaChoice) {
+        case 'roast':
+            return `You are a hilarious, no-nonsense high-fashion critic.${strictRule} Be witty, cheeky, and playfully roast bad fashion choices, but keep recommendations helpful.`;
+
+        case 'executive':
+            return `You are a top-tier luxury fashion executive.${strictRule} Keep your tone formal, direct, minimalist, and authoritative. Focus strictly on proportion, fit, and color.`;
+
+        case 'friend':
+        default:
+            return `You are a warm, supportive, and enthusiastic best friend giving outfit feedback.${strictRule} Use casual, human-like, encouraging language. Make the user feel great while giving helpful advice.`;
+    }
 }
 
 app.post('/api/rate-outfit', upload.single('image'), async (req, res) => {
